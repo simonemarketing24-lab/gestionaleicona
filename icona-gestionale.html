@@ -804,37 +804,48 @@ td { padding: 11px 14px; font-size: 13px; font-variant-numeric: tabular-nums; }
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="loading-screen" style="position:fixed;inset:0;z-index:9997;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+  <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--text)">Caricamento…</div>
+  <div style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--blu);border-radius:50%;animation:spin .8s linear infinite"></div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-const STORE_KEY = 'icona_clienti_v1';
-const PURCHASES_KEY = 'icona_acquisti_v1';
-const CATEGORIES_KEY = 'icona_categorie_v1';
+const SUPABASE_URL = 'https://akzckzcndgqcimvmhyfe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_F0mv8SRRZP23z9y5CX_C3w_6wcfvFGt';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const DEFAULT_CATS = ['Abbigliamento','Pantaloni','Tailleur','Camicie','Completi','Capispalla','Scarpe'];
 let customers = [], purchases = [], categories = [], selectedGender = '', currentCustomerId = null;
 
-function saveCategories() { try { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); } catch(e){} }
 function getCategories() { return categories; }
 
-function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(customers)); localStorage.setItem(PURCHASES_KEY, JSON.stringify(purchases)); } catch(e){} }
-function load() {
-  // Reset una-tantum: elimina i clienti di prova caricati nelle versioni precedenti
-  if (!localStorage.getItem('icona_reset_v2')) {
-    localStorage.removeItem(STORE_KEY);
-    localStorage.removeItem(PURCHASES_KEY);
-    localStorage.setItem('icona_reset_v2', '1');
-  }
-  try {
-    customers = JSON.parse(localStorage.getItem(STORE_KEY)||'[]');
-    purchases = JSON.parse(localStorage.getItem(PURCHASES_KEY)||'[]');
-    const storedCats = JSON.parse(localStorage.getItem(CATEGORIES_KEY)||'null');
-    categories = storedCats || [...DEFAULT_CATS];
-  } catch(e){ customers=[]; purchases=[]; categories=[...DEFAULT_CATS]; }
-  if (!customers.length) { populateCategorySelects(); return; }
-  // Migra le vecchie categorie eliminate
-  const catMap = {'Accessori':'Abbigliamento','Borse':'Completi','Gioielli':'Camicie','Intimo & Notte':'Abbigliamento','Sportswear':'Capispalla'};
-  let changed = false;
-  purchases.forEach(p=>{ if (catMap[p.categoria]) { p.categoria=catMap[p.categoria]; changed=true; } });
-  if (changed) save();
+async function saveCustomer(c) {
+  const row = {...c};
+  await sb.from('clienti').upsert(row);
+}
+async function savePurchase(p) {
+  await sb.from('acquisti').upsert({...p});
+}
+async function deletePurchaseDB(pid) {
+  await sb.from('acquisti').delete().eq('id', pid);
+}
+async function saveCategories() {
+  await sb.from('categorie').delete().neq('nome', '__never__');
+  if (categories.length) await sb.from('categorie').insert(categories.map(nome=>({nome})));
+}
+async function load() {
+  const [cRes, pRes, catRes] = await Promise.all([
+    sb.from('clienti').select('*'),
+    sb.from('acquisti').select('*'),
+    sb.from('categorie').select('nome').order('id'),
+  ]);
+  customers = cRes.data || [];
+  purchases = pRes.data || [];
+  const dbCats = catRes.data?.map(r=>r.nome) || [];
+  categories = dbCats.length ? dbCats : [...DEFAULT_CATS];
+  populateCategorySelects();
 }
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
@@ -1111,8 +1122,7 @@ function activateFidelityForSelected() {
   const idx = customers.findIndex(c=>c.id===currentCustomerId);
   if (idx < 0) return;
   customers[idx].fidelity = 'Si';
-  save();
-  // Refresh the card
+  saveCustomer(customers[idx]);
   selectCustomerFromSearch(currentCustomerId);
   showToast('Fidelity Card attivata ✓');
 }
@@ -1149,26 +1159,24 @@ function saveAcquisto() {
   if (!cats.length){showToast('Seleziona almeno una categoria');return;}
 
   let cid=currentCustomerId;
-  const isNewMode = document.getElementById('newCustomerArea').style.display!=='none';
-  if (cid) {
-    // Existing customer — fidelity may have been updated if new mode form was shown
-    const idx=customers.findIndex(c=>c.id===cid);
-    // nothing to update for search-selected customers (readonly)
-  } else {
-    // New customer from form
+  if (!cid) {
     const newData={nome,cognome,email:email||'',telefono:tel||'',genere:selectedGender||'',
       nascita:document.getElementById('f-nascita').value||'',
       taglia:document.getElementById('f-taglia').value||'',
       newsletter:document.getElementById('f-newsletter').value||'',
       fidelity:document.getElementById('f-fidelity').value||'',
       fonte:document.getElementById('f-fonte').value||''};
-    cid=uid(); customers.push({id:cid,...newData,createdAt:new Date().toISOString()});
+    cid=uid();
+    const newC={id:cid,...newData,createdAt:new Date().toISOString()};
+    customers.push(newC);
+    saveCustomer(newC);
   }
-  purchases.push({id:uid(),customerId:cid,data,importo:parseFloat(importo).toFixed(2),
+  const newP={id:uid(),customerId:cid,data,importo:parseFloat(importo).toFixed(2),
     categoria:cats.join(', '),
     sconto:document.getElementById('f-sconto').value||'',
-    note:document.getElementById('f-note').value.trim()});
-  save();
+    note:document.getElementById('f-note').value.trim()};
+  purchases.push(newP);
+  savePurchase(newP);
   const saved = customers.find(c=>c.id===cid);
   const pts = saved && saved.fidelity==='Si' ? loyaltyPoints(purchases.filter(p=>p.customerId===cid).reduce((s,p)=>s+parseFloat(p.importo),0)) : null;
   showToast(pts!==null ? `Acquisto salvato ✓ — ${saved.nome} ora ha ${pts} pt fidelity` : 'Acquisto salvato ✓');
@@ -1290,7 +1298,6 @@ async function exportCSV() {
 
 // ── Modal ──
 function openModal(cid) {
-  try { customers=JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); purchases=JSON.parse(localStorage.getItem(PURCHASES_KEY)||'[]'); } catch(e){}
   try {
   const c=customers.find(x=>x.id===cid);
   if(!c) {
@@ -1388,7 +1395,7 @@ function closeModal(e) {
 function deletePurchase(pid, cid) {
   if (!confirm('Eliminare questo acquisto?')) return;
   purchases = purchases.filter(p => p.id !== pid);
-  save();
+  deletePurchaseDB(pid);
   openModal(cid);
 }
 
@@ -1426,7 +1433,7 @@ function saveEditModal() {
     fidelity: document.getElementById('me-fidelity').value,
     fonte: document.getElementById('me-fonte').value,
   };
-  save();
+  saveCustomer(customers[idx]);
   document.getElementById('mdEditArea').style.display='none';
   document.getElementById('mdEditBtn').style.display='';
   openModal(_editingCid);
@@ -1449,7 +1456,7 @@ function addPurchaseFromModal() {
 function activateFidelityFromModal(cid) {
   const idx = customers.findIndex(c=>c.id===cid); if(idx<0) return;
   customers[idx].fidelity = 'Si';
-  save();
+  saveCustomer(customers[idx]);
   openModal(cid);
   showToast('Fidelity Card attivata ✓');
 }
@@ -1505,7 +1512,7 @@ function addCategory() {
   if (!val) { showToast('Inserisci il nome della categoria'); return; }
   if (categories.find(c=>c.toLowerCase()===val.toLowerCase())) { showToast('Categoria già esistente'); return; }
   categories.push(val);
-  saveCategories();
+  saveCategories(); // fire-and-forget
   populateCategorySelects();
   renderCategorie();
   input.value='';
@@ -1524,8 +1531,9 @@ function saveEditCat(i) {
   if (!val) return;
   const old = categories[i];
   categories[i] = val;
-  purchases.forEach(p=>{ if(p.categoria===old) p.categoria=val; });
-  save(); saveCategories();
+  const affected = purchases.filter(p=>p.categoria===old);
+  affected.forEach(p=>{ p.categoria=val; savePurchase(p); });
+  saveCategories();
   populateCategorySelects();
   renderCategorie();
   showToast('Categoria rinominata ✓');
@@ -1612,9 +1620,16 @@ function initAuth() {
 }
 
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
-load();
-renderDashboard();
-initAuth();
+(async () => {
+  try {
+    await load();
+  } catch(e) {
+    showToast('Errore connessione database');
+  }
+  document.getElementById('loading-screen').style.display = 'none';
+  renderDashboard();
+  initAuth();
+})();
 </script>
 
 </body></html>
