@@ -1564,9 +1564,18 @@ const TRIAL_DAYS = 30;
 const TRIAL_KEY = 'icona_trial_start';
 const SESSION_KEY = 'icona_session';
 
-function trialDaysLeft() {
-  let start = localStorage.getItem(TRIAL_KEY);
-  if (!start) { start = new Date().toISOString(); localStorage.setItem(TRIAL_KEY, start); }
+async function ensureTrialStart() {
+  const { data } = await sb.from('config').select('value').eq('key', TRIAL_KEY).single();
+  if (!data) {
+    const start = new Date().toISOString();
+    await sb.from('config').insert({ key: TRIAL_KEY, value: start });
+    return start;
+  }
+  return data.value;
+}
+
+async function trialDaysLeft() {
+  const start = await ensureTrialStart();
   const ms = Date.now() - new Date(start).getTime();
   const elapsed = Math.floor(ms / 86400000);
   return Math.max(0, TRIAL_DAYS - elapsed);
@@ -1588,8 +1597,8 @@ function renderTrialBar(days) {
   meta.textContent = days === 0 ? 'Prova scaduta' : `su ${TRIAL_DAYS} giorni totali`;
 }
 
-function checkTrial() {
-  const days = trialDaysLeft();
+async function checkTrial() {
+  const days = await trialDaysLeft();
   renderTrialBar(days);
   if (days === 0) {
     document.getElementById('expired-screen').style.display = 'flex';
@@ -1615,7 +1624,6 @@ function initAuth() {
     document.getElementById('auth-screen').style.display = 'none';
     checkTrial();
   }
-  // Focus username field
   document.getElementById('auth-user').focus();
 }
 
