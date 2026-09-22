@@ -32,6 +32,7 @@
   --gold: #BF9820; --silver: #7888A0;
 }
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
 
 /* Layout */
@@ -816,13 +817,19 @@ function getCategories() { return categories; }
 
 function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(customers)); localStorage.setItem(PURCHASES_KEY, JSON.stringify(purchases)); } catch(e){} }
 function load() {
+  // Reset una-tantum: elimina i clienti di prova caricati nelle versioni precedenti
+  if (!localStorage.getItem('icona_reset_v2')) {
+    localStorage.removeItem(STORE_KEY);
+    localStorage.removeItem(PURCHASES_KEY);
+    localStorage.setItem('icona_reset_v2', '1');
+  }
   try {
     customers = JSON.parse(localStorage.getItem(STORE_KEY)||'[]');
     purchases = JSON.parse(localStorage.getItem(PURCHASES_KEY)||'[]');
     const storedCats = JSON.parse(localStorage.getItem(CATEGORIES_KEY)||'null');
     categories = storedCats || [...DEFAULT_CATS];
   } catch(e){ customers=[]; purchases=[]; categories=[...DEFAULT_CATS]; }
-  if (!customers.length) { seedData(); return; }
+  if (!customers.length) { populateCategorySelects(); return; }
   // Migra le vecchie categorie eliminate
   const catMap = {'Accessori':'Abbigliamento','Borse':'Completi','Gioielli':'Camicie','Intimo & Notte':'Abbigliamento','Sportswear':'Capispalla'};
   let changed = false;
@@ -1283,8 +1290,18 @@ async function exportCSV() {
 
 // ── Modal ──
 function openModal(cid) {
+  try { customers=JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); purchases=JSON.parse(localStorage.getItem(PURCHASES_KEY)||'[]'); } catch(e){}
   try {
-  const c=customers.find(x=>x.id===cid); if(!c) return;
+  const c=customers.find(x=>x.id===cid);
+  if(!c) {
+    document.getElementById('mdName').textContent='Cliente non trovato';
+    document.getElementById('mdSub').textContent='ID: '+cid;
+    document.getElementById('mdLoyalty').innerHTML='';
+    document.getElementById('mdGrid').innerHTML='';
+    document.getElementById('mdHistory').innerHTML='<p style="color:var(--text-muted);font-size:13px">Nessun dato disponibile</p>';
+    document.getElementById('overlay').hidden=false;
+    return;
+  }
   const cp=purchases.filter(p=>p.customerId===cid).sort((a,b)=>b.data.localeCompare(a.data));
   const total=cp.reduce((s,p)=>s+parseFloat(p.importo),0);
   const lv=loyaltyLevel(total);
