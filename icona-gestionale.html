@@ -985,7 +985,9 @@ function renderDashboard() {
   }).sort((a,b)=>a._day-b._day);
 
   document.getElementById('bdayCount').textContent = bdays.length;
-  document.getElementById('bdayList').innerHTML = bdays.length ? bdays.map(c=>{
+  const BDAY_PAGE = 5;
+  let bdayShown = BDAY_PAGE;
+  function renderBdayItem(c) {
     const isToday = c._day===todayDay;
     const isPast = c._day < todayDay;
     const tel = (c.telefono||'').replace(/\D/g,'');
@@ -997,7 +999,17 @@ function renderDashboard() {
         <span class="alert-pill ${isToday?'pill-today':'pill-bday'}">${isToday?'🎂 Oggi!':isPast?'passato':'in arrivo'}</span>
       </div>
     </div>`;
-  }).join('') : '<div class="empty" style="padding:20px"><p>Nessun compleanno questo mese</p></div>';
+  }
+  function renderBdayList() {
+    const visible = bdays.slice(0, bdayShown);
+    const remaining = bdays.length - bdayShown;
+    const showMoreBtn = remaining > 0
+      ? `<div style="text-align:center;padding:12px 0 4px"><button onclick="bdayShown+=BDAY_PAGE;renderBdayList()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:6px 18px;cursor:pointer;font-size:13px;color:var(--text-secondary)">Mostra altri ${Math.min(remaining, BDAY_PAGE)} (${remaining} rimasti)</button></div>`
+      : '';
+    document.getElementById('bdayList').innerHTML = visible.map(renderBdayItem).join('') + showMoreBtn;
+  }
+  if (bdays.length) { renderBdayList(); }
+  else { document.getElementById('bdayList').innerHTML = '<div class="empty" style="padding:20px"><p>Nessun compleanno questo mese</p></div>'; }
 
   // Top loyal
   const topLoyal = customers.map(c=>{
