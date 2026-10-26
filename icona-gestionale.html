@@ -1236,7 +1236,7 @@ function renderClienti() {
   const fSort=document.getElementById('fSort').value;
 
   let list=enrichCustomers();
-  if (q) list=list.filter(c=>`${c.nome} ${c.cognome}`.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||c.telefono.replace(/\s/g,'').includes(q.replace(/\s/g,''))||`${c.cognome} ${c.nome}`.toLowerCase().includes(q));
+  if (q) list=list.filter(c=>`${c.nome} ${c.cognome}`.toLowerCase().includes(q)||`${c.cognome} ${c.nome}`.toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)||(c.telefono||'').replace(/\s/g,'').includes(q.replace(/\s/g,'')));
   if (fGenere) list=list.filter(c=>c.genere===fGenere);
   if (fCat) list=list.filter(c=>c._purchases.some(p=>p.categoria===fCat));
   if (fLoyalty) list=list.filter(c=>c._level===fLoyalty);
