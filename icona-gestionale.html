@@ -986,7 +986,8 @@ function renderDashboard() {
 
   document.getElementById('bdayCount').textContent = bdays.length;
   const BDAY_PAGE = 5;
-  let bdayShown = BDAY_PAGE;
+  window._bdayAll = bdays;
+  window._bdayShown = BDAY_PAGE;
   function renderBdayItem(c) {
     const isToday = c._day===todayDay;
     const isPast = c._day < todayDay;
