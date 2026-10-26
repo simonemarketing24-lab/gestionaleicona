@@ -1001,15 +1001,17 @@ function renderDashboard() {
       </div>
     </div>`;
   }
-  function renderBdayList() {
-    const visible = bdays.slice(0, bdayShown);
-    const remaining = bdays.length - bdayShown;
+  window.renderBdayList = function() {
+    const all = window._bdayAll;
+    const shown = window._bdayShown;
+    const visible = all.slice(0, shown);
+    const remaining = all.length - shown;
     const showMoreBtn = remaining > 0
-      ? `<div style="text-align:center;padding:12px 0 4px"><button onclick="bdayShown+=BDAY_PAGE;renderBdayList()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:6px 18px;cursor:pointer;font-size:13px;color:var(--text-secondary)">Mostra altri ${Math.min(remaining, BDAY_PAGE)} (${remaining} rimasti)</button></div>`
+      ? `<div style="text-align:center;padding:12px 0 4px"><button onclick="window._bdayShown+=5;window.renderBdayList()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:6px 18px;cursor:pointer;font-size:13px;color:var(--text-secondary)">Mostra altri ${Math.min(remaining,5)} (${remaining} rimasti)</button></div>`
       : '';
     document.getElementById('bdayList').innerHTML = visible.map(renderBdayItem).join('') + showMoreBtn;
-  }
-  if (bdays.length) { renderBdayList(); }
+  };
+  if (bdays.length) { window.renderBdayList(); }
   else { document.getElementById('bdayList').innerHTML = '<div class="empty" style="padding:20px"><p>Nessun compleanno questo mese</p></div>'; }
 
   // Top loyal
