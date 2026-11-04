@@ -1279,36 +1279,41 @@ function clearSearch() {
 }
 
 // ── Export CSV ──
-async function exportCSV() {
+function exportCSV() {
   const q=document.getElementById('searchQ').value.trim().toLowerCase();
   const fGenere=document.getElementById('fGenere').value;
+  const fCat=document.getElementById('fCategoria').value;
   const fLoyalty=document.getElementById('fLoyalty').value;
+  const fDal=document.getElementById('fDataDal').value;
+  const fAl=document.getElementById('fDataAl').value;
+  const fMin=parseFloat(document.getElementById('fImportoMin').value)||0;
+  const fMax=parseFloat(document.getElementById('fImportoMax').value)||Infinity;
+
   let list=enrichCustomers();
-  if (q) list=list.filter(c=>`${c.nome} ${c.cognome}`.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||c.telefono.replace(/\s/g,'').includes(q.replace(/\s/g,'')));
+  if (q) list=list.filter(c=>`${c.nome} ${c.cognome}`.toLowerCase().includes(q)||`${c.cognome} ${c.nome}`.toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)||(c.telefono||'').replace(/\s/g,'').includes(q.replace(/\s/g,'')));
   if (fGenere) list=list.filter(c=>c.genere===fGenere);
+  if (fCat) list=list.filter(c=>c._purchases.some(p=>p.categoria===fCat));
   if (fLoyalty) list=list.filter(c=>c._level===fLoyalty);
+  if (fDal) list=list.filter(c=>c._purchases.some(p=>p.data>=fDal));
+  if (fAl) list=list.filter(c=>c._purchases.some(p=>p.data<=fAl));
+  list=list.filter(c=>c._total>=fMin&&c._total<=fMax);
 
   const headers=['Nome','Cognome','Email','Telefono','Genere','Taglia','Data nascita','Newsletter','Fidelity Card','Punti fidelity','Come conosciuto','N acquisti','Totale speso','Livello fedelta','Ultima visita'];
   const rows=list.map(c=>[
-    c.nome,c.cognome,c.email,c.telefono,c.genere,c.taglia||'',c.nascita||'',
+    c.nome,c.cognome,c.email||'',c.telefono||'',c.genere||'',c.taglia||'',c.nascita||'',
     c.newsletter||'',c.fidelity||'No',c.fidelity==='Si'?loyaltyPoints(c._total):0,
     c.fonte||'',c._purchases.length,
     c._total.toFixed(2),loyaltyLabel(c._level),c._lastDate||''
   ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
 
-  const csv=[headers.join(','),...rows].join('\n');
-
-  try {
-    const downloads = await window.claude?.use('downloads');
-    if (downloads) {
-      await downloads.save({ filename: 'clienti-icona.csv', data: '﻿' + csv });
-      showToast('CSV esportato ✓');
-    } else {
-      showToast('Export non disponibile in questa modalità');
-    }
-  } catch(e) {
-    if (e?.code !== 'cancelled') showToast('Errore durante l\'esportazione');
-  }
+  const csv='﻿'+[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`clienti-icona${list.length<customers.length?'-filtrati':''}.csv`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast(`CSV esportato: ${list.length} clienti ✓`);
 }
 
 // ── Modal ──
