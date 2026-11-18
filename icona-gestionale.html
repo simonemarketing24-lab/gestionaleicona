@@ -1206,7 +1206,7 @@ function saveAcquisto() {
 
 function resetForm() {
   ['f-nome','f-cognome','f-email','f-tel','f-nascita','f-importo','f-note','f-sconto'].forEach(id=>{ document.getElementById(id).value=''; });
-  ['f-newsletter','f-fonte','f-taglia','f-fidelity'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['f-newsletter','f-fonte','f-taglia','f-fidelity','f-codice-fidelity'].forEach(id=>{ document.getElementById(id).value=''; });
   clearCatChips();
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   selectGender(''); selectedGender=''; currentCustomerId=null;
@@ -1355,6 +1355,7 @@ function openModal(cid) {
         <div class="fidelity-box-left">
           <span class="fidelity-card-label">Fidelity Card · Icona</span>
           <span class="fidelity-card-name">${c.nome} ${c.cognome}</span>
+          ${c.codice_fidelity?`<span style="font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.5px;margin-top:2px">N° ${c.codice_fidelity}</span>`:''}
         </div>
         <div style="text-align:right">
           <div class="fidelity-pts-big">${pts}</div>
