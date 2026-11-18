@@ -1382,7 +1382,8 @@ function openModal(cid) {
     ['Email',c.email||'—'],['Telefono',c.telefono||'—'],
     ['Genere',c.genere||'—'],['Taglia',c.taglia||'—'],
     ['Data di Nascita',c.nascita?fmtDate(c.nascita):'—'],['Newsletter',c.newsletter||'—'],
-    ['Fidelity Card',c.fidelity||'—'],['Come ci ha conosciuto',c.fonte||'—'],
+    ['Fidelity Card',c.fidelity||'—'],['N° Fidelity Card',c.codice_fidelity||'—'],
+    ['Come ci ha conosciuto',c.fonte||'—'],
     ['Cliente dal',fmtDate((c.createdAt||'').slice(0,10))],
   ].map(([k,v])=>`<div class="detail-item"><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`).join('');
 
