@@ -782,6 +782,7 @@ td { padding: 11px 14px; font-size: 13px; font-variant-numeric: tabular-nums; }
           <select id="me-newsletter"><option value="">—</option><option value="Si">Sì</option><option value="No">No</option></select></div>
         <div class="form-group"><label>Fidelity Card</label>
           <select id="me-fidelity"><option value="">—</option><option value="Si">Sì, attiva</option><option value="No">No</option></select></div>
+        <div class="form-group"><label>N° Fidelity Card</label><input id="me-codice-fidelity" type="text" placeholder="es. 310001"></div>
         <div class="form-group"><label>Come ci ha conosciuto</label>
           <select id="me-fonte"><option value="">—</option><option>Passaggio in negozio</option><option>Passaparola</option><option>Instagram</option><option>Facebook</option><option>Google</option><option>Altro</option></select></div>
       </div>
@@ -1433,6 +1434,7 @@ function openEditModal(cid) {
   document.getElementById('me-taglia').value = c.taglia||'';
   document.getElementById('me-newsletter').value = c.newsletter||'';
   document.getElementById('me-fidelity').value = c.fidelity||'';
+  document.getElementById('me-codice-fidelity').value = c.codice_fidelity||'';
   document.getElementById('me-fonte').value = c.fonte||'';
   document.getElementById('mdEditArea').style.display='block';
   document.getElementById('mdEditBtn').style.display='none';
