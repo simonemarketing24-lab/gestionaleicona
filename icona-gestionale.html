@@ -1012,12 +1012,12 @@ function renderDashboard() {
     document.getElementById('inativiCount').textContent = all.length;
     const rows = visible.map(c=>{
       const days = Math.floor((now - new Date(c._last)) / 86400000);
-      return `<div class="alert-item" onclick="openModal('${c.id}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      return `<div class="alert-item" onclick="openModal('${c.id}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="min-width:0"><div class="alert-name">${c.nome} ${c.cognome}</div><div class="alert-meta">${c.email||c.telefono||'—'}</div></div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap">
           <span class="alert-pill pill-warn">${days} gg fa</span>
-          <button onclick="window.markContacted('${c.id}',event)" title="Segna come contattato (nasconde per 30 giorni)" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--text-secondary);white-space:nowrap">✓ Contattato</button>
-          <button onclick="window.markIgnored('${c.id}',event)" title="Nascondi definitivamente" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--text-muted);white-space:nowrap">✕ Ignora</button>
+          <button onclick="window.markContacted('${c.id}',event)" title="Nasconde per 30 giorni" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text-secondary);white-space:nowrap">✓ Contattato</button>
+          <button onclick="window.markIgnored('${c.id}',event)" title="Nascondi definitivamente" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text-muted);white-space:nowrap">✕ Ignora</button>
         </div>
       </div>`;
     }).join('');
