@@ -959,23 +959,59 @@ function renderDashboard() {
     </div>`).join('');
 
   // Clienti inattivi (no purchase in 90+ days)
+  // Flag "contattato": nasconde per 30 giorni (localStorage)
+  let _contacted = {};
+  try { _contacted = JSON.parse(localStorage.getItem('icona_contacted')||'{}'); } catch(e){}
+  const _contactedCutoff = Date.now() - 30*86400000;
+  Object.keys(_contacted).forEach(k=>{ if(_contacted[k]<_contactedCutoff) delete _contacted[k]; });
+  try { localStorage.setItem('icona_contacted', JSON.stringify(_contacted)); } catch(e){}
+
   const cutoff90 = new Date(); cutoff90.setDate(cutoff90.getDate()-90);
   const cutoff90str = cutoff90.toISOString().slice(0,10);
   const inattivi = customers.map(c=>{
     const cp = purchases.filter(p=>p.customerId===c.id);
     const last = cp.map(p=>p.data).sort().reverse()[0]||'';
     return {...c, _last:last, _total:cp.reduce((s,p)=>s+parseFloat(p.importo),0)};
-  }).filter(c=>c._last && c._last < cutoff90str)
-    .sort((a,b)=>a._last.localeCompare(b._last)).slice(0,6);
+  }).filter(c=>c._last && c._last < cutoff90str && !_contacted[c.id])
+    .sort((a,b)=>a._last.localeCompare(b._last));
 
-  document.getElementById('inativiCount').textContent = inattivi.length;
-  document.getElementById('inativiList').innerHTML = inattivi.length ? inattivi.map(c=>{
-    const days = Math.floor((now - new Date(c._last)) / 86400000);
-    return `<div class="alert-item" onclick="openModal('${c.id}')" style="cursor:pointer">
-      <div><div class="alert-name">${c.nome} ${c.cognome}</div><div class="alert-meta">${c.email||c.telefono||'—'}</div></div>
-      <span class="alert-pill pill-warn">${days} giorni fa</span>
-    </div>`;
-  }).join('') : '<div class="empty" style="padding:20px"><p>Nessun cliente inattivo ✓</p></div>';
+  const INATT_PAGE = 5;
+  window._inattAll = inattivi;
+  window._inattShown = INATT_PAGE;
+  window.markContacted = function(id, e) {
+    e.stopPropagation();
+    let ct = {}; try { ct = JSON.parse(localStorage.getItem('icona_contacted')||'{}'); } catch(e2){}
+    ct[id] = Date.now();
+    try { localStorage.setItem('icona_contacted', JSON.stringify(ct)); } catch(e2){}
+    window._inattAll = window._inattAll.filter(c=>c.id!==id);
+    window._inattShown = Math.min(window._inattShown, window._inattAll.length) || INATT_PAGE;
+    window.renderInattList();
+    showToast('Cliente segnato come contattato ✓');
+  };
+  window.renderInattList = function() {
+    const all = window._inattAll;
+    const shown = window._inattShown;
+    const visible = all.slice(0, shown);
+    const remaining = all.length - shown;
+    document.getElementById('inativiCount').textContent = all.length;
+    const rows = visible.map(c=>{
+      const days = Math.floor((now - new Date(c._last)) / 86400000);
+      return `<div class="alert-item" onclick="openModal('${c.id}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="min-width:0"><div class="alert-name">${c.nome} ${c.cognome}</div><div class="alert-meta">${c.email||c.telefono||'—'}</div></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <span class="alert-pill pill-warn">${days} gg fa</span>
+          <button onclick="window.markContacted('${c.id}',event)" title="Segna come contattato" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--text-secondary);white-space:nowrap">✓ Contattato</button>
+        </div>
+      </div>`;
+    }).join('');
+    const moreBtn = remaining > 0
+      ? `<div style="text-align:center;padding:12px 0 4px"><button onclick="window._inattShown+=5;window.renderInattList()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:6px 18px;cursor:pointer;font-size:13px;color:var(--text-secondary)">Mostra altri ${Math.min(remaining,5)} (${remaining} rimasti)</button></div>`
+      : '';
+    document.getElementById('inativiList').innerHTML = all.length
+      ? rows + moreBtn
+      : '<div class="empty" style="padding:20px"><p>Nessun cliente inattivo ✓</p></div>';
+  };
+  window.renderInattList();
 
   // Compleanni del mese corrente
   const thisMonth = now.getMonth()+1;
