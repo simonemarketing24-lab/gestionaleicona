@@ -1521,9 +1521,11 @@ async function saveEditModal() {
     codice_fidelity: document.getElementById('me-codice-fidelity').value.trim(),
     fonte: document.getElementById('me-fonte').value,
   };
-  await saveCustomer(customers[idx]);
+  const saveOk = await saveCustomer(customers[idx]);
+  if (!saveOk) return;
   document.getElementById('mdEditArea').style.display='none';
   document.getElementById('mdEditBtn').style.display='';
+  renderClienti();
   openModal(_editingCid);
   showToast('Dati aggiornati ✓');
 }
