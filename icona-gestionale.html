@@ -831,8 +831,13 @@ let customers = [], purchases = [], categories = [], selectedGender = '', curren
 function getCategories() { return categories; }
 
 async function saveCustomer(c) {
-  const row = {...c};
-  await sb.from('clienti').upsert(row);
+  // Strip computed fields that don't exist in DB
+  const { _last, _total, _day, ...row } = c;
+  const { error } = await sb.from('clienti').upsert(row);
+  if (error) {
+    console.error('saveCustomer error:', error);
+    showToast('⚠ Errore salvataggio: ' + error.message);
+  }
 }
 async function savePurchase(p) {
   await sb.from('acquisti').upsert({...p});
