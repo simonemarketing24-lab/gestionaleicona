@@ -1505,7 +1505,7 @@ function openEditModal(cid) {
   document.getElementById('mdEditArea').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function saveEditModal() {
+async function saveEditModal() {
   if (!_editingCid) return;
   const idx = customers.findIndex(c=>c.id===_editingCid); if(idx<0) return;
   customers[idx] = { ...customers[idx],
@@ -1521,7 +1521,7 @@ function saveEditModal() {
     codice_fidelity: document.getElementById('me-codice-fidelity').value.trim(),
     fonte: document.getElementById('me-fonte').value,
   };
-  saveCustomer(customers[idx]);
+  await saveCustomer(customers[idx]);
   document.getElementById('mdEditArea').style.display='none';
   document.getElementById('mdEditBtn').style.display='';
   openModal(_editingCid);
