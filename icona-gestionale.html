@@ -837,7 +837,9 @@ async function saveCustomer(c) {
   if (error) {
     console.error('saveCustomer error:', error);
     showToast('⚠ Errore salvataggio: ' + error.message);
+    return false;
   }
+  return true;
 }
 async function savePurchase(p) {
   await sb.from('acquisti').upsert({...p});
