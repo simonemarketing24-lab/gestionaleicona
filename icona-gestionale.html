@@ -969,6 +969,8 @@ function renderDashboard() {
   const _contactedCutoff = Date.now() - 30*86400000;
   Object.keys(_contacted).forEach(k=>{ if(_contacted[k]<_contactedCutoff) delete _contacted[k]; });
   try { localStorage.setItem('icona_contacted', JSON.stringify(_contacted)); } catch(e){}
+  let _ignored = [];
+  try { _ignored = JSON.parse(localStorage.getItem('icona_ignored')||'[]'); } catch(e){}
 
   const cutoff90 = new Date(); cutoff90.setDate(cutoff90.getDate()-90);
   const cutoff90str = cutoff90.toISOString().slice(0,10);
@@ -976,7 +978,7 @@ function renderDashboard() {
     const cp = purchases.filter(p=>p.customerId===c.id);
     const last = cp.map(p=>p.data).sort().reverse()[0]||'';
     return {...c, _last:last, _total:cp.reduce((s,p)=>s+parseFloat(p.importo),0)};
-  }).filter(c=>c._last && c._last < cutoff90str && !_contacted[c.id])
+  }).filter(c=>c._last && c._last < cutoff90str && !_contacted[c.id] && !_ignored.includes(c.id))
     .sort((a,b)=>a._last.localeCompare(b._last));
 
   const INATT_PAGE = 5;
