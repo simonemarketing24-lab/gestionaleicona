@@ -1521,8 +1521,7 @@ async function saveEditModal() {
     codice_fidelity: document.getElementById('me-codice-fidelity').value.trim(),
     fonte: document.getElementById('me-fonte').value,
   };
-  const saveOk = await saveCustomer(customers[idx]);
-  if (!saveOk) return;
+  await saveCustomer(customers[idx]);
   document.getElementById('mdEditArea').style.display='none';
   document.getElementById('mdEditBtn').style.display='';
   renderClienti();
