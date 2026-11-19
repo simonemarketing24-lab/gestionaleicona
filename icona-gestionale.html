@@ -992,6 +992,16 @@ function renderDashboard() {
     window.renderInattList();
     showToast('Cliente segnato come contattato ✓');
   };
+  window.markIgnored = function(id, e) {
+    e.stopPropagation();
+    let ig = []; try { ig = JSON.parse(localStorage.getItem('icona_ignored')||'[]'); } catch(e2){}
+    if (!ig.includes(id)) ig.push(id);
+    try { localStorage.setItem('icona_ignored', JSON.stringify(ig)); } catch(e2){}
+    window._inattAll = window._inattAll.filter(c=>c.id!==id);
+    window._inattShown = Math.min(window._inattShown, window._inattAll.length) || INATT_PAGE;
+    window.renderInattList();
+    showToast('Cliente nascosto dalla lista ✓');
+  };
   window.renderInattList = function() {
     const all = window._inattAll;
     const shown = window._inattShown;
