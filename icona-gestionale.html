@@ -1721,6 +1721,28 @@ function initAuth() {
 }
 
 document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+
+async function refreshData(silent) {
+  try {
+    await load();
+    renderDashboard();
+    renderClienti();
+    if (!silent) showToast('Dati aggiornati ✓');
+  } catch(e) {
+    if (!silent) showToast('Errore aggiornamento dati');
+  }
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  const label = document.getElementById('refreshLabel');
+  btn.disabled = true;
+  label.textContent = '...';
+  await refreshData(false);
+  btn.disabled = false;
+  label.textContent = 'Aggiorna';
+}
+
 (async () => {
   try {
     await load();
@@ -1730,6 +1752,8 @@ document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('loading-screen').style.display = 'none';
   renderDashboard();
   initAuth();
+  // Auto-refresh ogni 2 minuti
+  setInterval(() => refreshData(true), 2 * 60 * 1000);
 })();
 </script>
 
