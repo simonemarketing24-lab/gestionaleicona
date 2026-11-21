@@ -836,8 +836,7 @@ function getCategories() { return categories; }
 
 async function saveCustomer(c) {
   const { _last, _total, _day, ...row } = c;
-  const { id, ...fields } = row;
-  const { error } = await sb.from('clienti').update(fields).eq('id', id);
+  const { error } = await sb.from('clienti').upsert(row, { onConflict: 'id' });
   if (error) {
     console.error('saveCustomer error:', error);
     showToast('⚠ Errore salvataggio: ' + error.message);
