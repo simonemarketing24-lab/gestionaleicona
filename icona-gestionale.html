@@ -414,6 +414,10 @@ td { padding: 11px 14px; font-size: 13px; font-variant-numeric: tabular-nums; }
     <div class="topbar">
       <div class="page-title" id="pageTitle">Dashboard</div>
       <div class="topbar-right">
+        <button class="btn btn-outline btn-sm" id="refreshBtn" onclick="manualRefresh()" title="Aggiorna dati da tutti i dispositivi">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M4 4v5h.582m15.356 2A8 8 0 014.582 9m0 0H9m11 11v-5h-.581m0 0a8 8 0 01-15.357-2m15.357 2H15"/></svg>
+          <span id="refreshLabel">Aggiorna</span>
+        </button>
         <button class="btn btn-bordo btn-sm" onclick="showView('acquisto')">
           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
           Nuovo Acquisto
